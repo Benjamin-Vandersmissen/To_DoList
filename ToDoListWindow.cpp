@@ -5,6 +5,7 @@
 #include "ToDoListWindow.h"
 
 static int SEPERATION = 8;
+static Fl_Double_Window* addNodeWindow = NULL;
 
 ToDoListWindow::ToDoListWindow(int w, int h, const char *l) : Fl_Double_Window(w, h, l) {
     fl_font(0, 14);
@@ -28,6 +29,8 @@ ToDoListWindow::ToDoListWindow(int w, int h, const char *l) : Fl_Double_Window(w
 
     this->addButton = new Fl_Button(10,90,60,32, "Add");
     this->addButton->callback(addCB);
+
+    this->callback(quitWindowCB);
 
     this->end();
     this->show();
@@ -224,4 +227,25 @@ void ToDoListWindow::addNode(std::string title, std::string text) {
     ListNode* LNode = new ListNode(80, 50 + height, node);
     this->add(LNode);
     this->listnodes.push_back(LNode);
+}
+
+void ToDoListWindow::quitWindowCB(Fl_Widget *w) {
+    ToDoListWindow* win = (ToDoListWindow*) w;
+    bool unsavedChanges = win->unsavedChanges();
+    if (unsavedChanges){
+        int a = fl_choice("There are unsaved changes. Do you really want to quit?", "Yes", "No",0);
+        if (a == 0)
+            win->hide();
+    }
+    else{
+        win->hide();
+    }
+
+}
+
+bool ToDoListWindow::unsavedChanges() {
+    ToDoList * list = new ToDoList;
+    std::ifstream stream(".list");
+    stream >> *list;
+    return !(*list == *(this->list));
 }

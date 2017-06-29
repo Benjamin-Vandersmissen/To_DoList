@@ -73,4 +73,14 @@ bool ToDoList::add(Node *node) {
     return true;
 }
 
+bool operator==(ToDoList &list1, ToDoList &list2) {
+    if (list1.nodes.size() != list2.nodes.size())
+        return false;
+    for(int i = 0; i < list1.nodes.size(); i++){
+        if (list1.nodes[i]->getText() != list2.nodes[i]->getText() || list1.nodes[i]->getTitle() != list2.nodes[i]->getTitle())
+            return false;
+    }
+    return true;
+}
+
 

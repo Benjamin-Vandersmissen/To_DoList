@@ -48,6 +48,8 @@ private:
     static void saveListCB(Fl_Widget* w);
 
     static void addCB(Fl_Widget* w);
+
+    static void quitWindowCB(Fl_Widget* w);
 public:
     ToDoListWindow(int w, int h, const char* l = 0);
 
@@ -58,6 +60,8 @@ public:
     Fl_Button* addButton = NULL;
 
     void addNode(std::string title, std::string text);
+
+    bool unsavedChanges();
 };
 
 

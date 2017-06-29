@@ -18,6 +18,8 @@ public:
 
     friend class ToDoListWindow;
 
+    friend bool operator==(ToDoList &list1, ToDoList &list2);
+
     ToDoList(std::istream& istream);
 
     ToDoList();
@@ -36,7 +38,7 @@ public:
 
     void moveToBottom(int a);
 
-     std::vector<Node *> getNodes() const;
+    std::vector<Node *> getNodes() const;
 };
 
 
