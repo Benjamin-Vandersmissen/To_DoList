@@ -13,6 +13,9 @@
 #include "FL/Fl_Box.H"
 #include "FL/Fl_Button.H"
 #include "FL/names.h"
+#include "FL/Fl_Text_Buffer.H"
+#include "FL/Fl_Text_Editor.H"
+#include "FL/Fl_Input.H"
 #include "ToDoList.h"
 #include "UsefulFunctions.h"
 #include <sys/stat.h>
@@ -50,6 +53,9 @@ private:
     static void addCB(Fl_Widget* w);
 
     static void quitWindowCB(Fl_Widget* w);
+
+    static void submitCB(Fl_Widget* w, void* v);
+
 public:
     ToDoListWindow(int w, int h, const char* l = 0);
 
@@ -63,6 +69,9 @@ public:
 
     bool unsavedChanges();
 };
+
+
+void addNodeWindowCB(Fl_Widget* w);
 
 
 std::pair<double, double> dimensions(std::string s);

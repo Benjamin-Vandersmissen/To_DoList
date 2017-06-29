@@ -7,6 +7,11 @@
 static int SEPERATION = 8;
 static Fl_Double_Window* addNodeWindow = NULL;
 
+static Fl_Input* titleInput = NULL;
+static Fl_Text_Editor* descriptionEditor = NULL;
+static Fl_Text_Buffer* buffer = NULL;
+static Fl_Button* submitButton = NULL;
+
 ToDoListWindow::ToDoListWindow(int w, int h, const char *l) : Fl_Double_Window(w, h, l) {
     fl_font(0, 14);
     this->color(FL_WHITE);
@@ -41,17 +46,15 @@ std::pair<double, double> dimensions(std::string s) {
     double maxWidth = -1;
     double height = fl_height();
     int index = 0;
-    std::string a = s;
 
-    for(char c : a){
+    for(char c : s){
         if (c=='\n')
             height += fl_height();
     }
-
-    for(std::string a; true; a = s.substr(index, s.find('\n', index))){
-        index += a.size();
-        if (index == 0)
+    for(std::string a; true; a = s.substr(index, s.find('\n', index)-index)){
+        if (a.size() == 0)
             continue;
+        index += a.size();
         maxWidth = std::max(maxWidth, fl_width(a.c_str()));
         index++;
         if (index >= s.size())
@@ -60,6 +63,21 @@ std::pair<double, double> dimensions(std::string s) {
     dim.first = maxWidth;
     dim.second = height;
     return dim;
+}
+
+void addNodeWindowCB(Fl_Widget *w) {
+    addNodeWindow = NULL;
+    Fl::delete_widget(w);
+}
+
+void ToDoListWindow::submitCB(Fl_Widget *w, void *v) {
+    ToDoListWindow* win = (ToDoListWindow*) v;
+    const char* text= titleInput->value();
+    if (text == NULL)
+        return;
+    win->addNode(titleInput->value(), buffer->text());
+    w->window()->do_callback();
+    win->redraw();
 }
 
 ListNode::ListNode(int x, int y, Node *node) : Fl_Box(x, y, 0 , 0), node(node), origX(x), origY(y){
@@ -131,7 +149,7 @@ void ListNode::draw() {
         std::pair<int, int> dims = dimensions(node->text);
         fl_draw_box(box(),x()+origW+2,y(), w()-origW, dims.second, FL_RED);
         fl_color(FL_BLACK);
-        fl_draw(node->text.c_str(),x()+origW+2,y(), w()-origW, dims.second, align(), image(), 1);
+        fl_draw(node->text.c_str(),x()+origW+2+SEPERATION/2,y(), w()-origW, dims.second, FL_ALIGN_LEFT | FL_ALIGN_INSIDE, image(), 1);
     }
     else{
         if (w() != origW || h() != origH){
@@ -203,16 +221,20 @@ void ToDoListWindow::saveListCB(Fl_Widget *w) {
 
 void ToDoListWindow::addCB(Fl_Widget *w) {
     ToDoListWindow* win = (ToDoListWindow*) w->window();
-    const char* text = fl_input("Title?", "Title");
-    if (text == NULL)
-        return;
-    std::string title = text;
-    text = fl_input("Description?", "Description");
-    if (text == NULL)
-        return;
-    std::string description = text;
-    win->addNode(title, text);
-
+    if (addNodeWindow != NULL) {
+        addNodeWindow->do_callback();
+    }
+        addNodeWindow = new Fl_Double_Window(200, 200, 500, 500);
+        addNodeWindow->callback(addNodeWindowCB);
+        titleInput = new Fl_Input(150,50,200,32,"Title");
+        titleInput->align(FL_ALIGN_TOP);
+        descriptionEditor = new Fl_Text_Editor(40,150,400,200,"Decription");
+        buffer = new Fl_Text_Buffer();
+        submitButton = new Fl_Button(200,400,100,32, "Submit");
+        submitButton->callback(submitCB, win);
+        buffer->text("");
+        descriptionEditor->buffer(buffer);
+        addNodeWindow->show();
 }
 
 void ToDoListWindow::addNode(std::string title, std::string text) {
@@ -234,10 +256,13 @@ void ToDoListWindow::quitWindowCB(Fl_Widget *w) {
     bool unsavedChanges = win->unsavedChanges();
     if (unsavedChanges){
         int a = fl_choice("There are unsaved changes. Do you really want to quit?", "Yes", "No",0);
-        if (a == 0)
+        if (a == 0){
+            addNodeWindow->hide();
             win->hide();
+        }
     }
     else{
+        addNodeWindow->hide();
         win->hide();
     }
 
