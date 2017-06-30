@@ -11,6 +11,7 @@ static Fl_Input* titleInput = NULL;
 static Fl_Text_Editor* descriptionEditor = NULL;
 static Fl_Text_Buffer* buffer = NULL;
 static Fl_Button* submitButton = NULL;
+static ListNode* editNode = NULL;
 
 ToDoListWindow::ToDoListWindow(int w, int h, const char *l) : Fl_Double_Window(w, h, l) {
     fl_font(0, 14);
@@ -75,7 +76,15 @@ void ToDoListWindow::submitCB(Fl_Widget *w, void *v) {
     const char* text= titleInput->value();
     if (text == NULL)
         return;
-    win->addNode(titleInput->value(), buffer->text());
+    if (editNode == NULL)
+        win->addNode(titleInput->value(), buffer->text());
+    else{
+        editNode->node->setText(buffer->text());
+        editNode->node->setTitle(titleInput->value());
+        std::pair<int, int> dims = dimensions(titleInput->value());
+        editNode->origW = dims.first; //only the width needs to be updated, because the title is always a single line
+        editNode = NULL;
+    }
     w->window()->do_callback();
     win->redraw();
 }
@@ -116,13 +125,29 @@ int ListNode::handle(int event) {
             return 1;
         }
         case FL_PUSH:{
-            drawDescription = 0;
-            updateSize();
-            this->window()->insert(*this, this->window()->children()); //ensure this widget gets drawn on top
-            this->window()->redraw();
-            offsets[0] = x()-Fl::event_x();
-            offsets[1] = y()-Fl::event_y();
-            return 1;
+            switch(Fl::event_key()) {
+                case 65257: //LEFT MOUSE
+                    if (Fl::event_clicks() == 0) {
+                        drawDescription = 0;
+                        updateSize();
+                        this->window()->insert(*this,
+                                               this->window()->children()); //ensure this widget gets drawn on top
+                        this->window()->redraw();
+                        offsets[0] = x() - Fl::event_x();
+                        offsets[1] = y() - Fl::event_y();
+                        return 1;
+                    }else if (Fl::event_clicks() == 1){
+                        ToDoListWindow* win = (ToDoListWindow*) window();
+                        win->addButton->do_callback();
+                        titleInput->value(node->title.c_str());
+                        buffer->text(node->text.c_str());
+                        editNode = this;
+                        addNodeWindow->take_focus();
+                        return 0;
+                    }
+                default:
+                    return 0;
+            }
         }
         case FL_DRAG:{
             this->position(Fl::event_x()+offsets[0], Fl::event_y()+offsets[1]);
@@ -257,12 +282,14 @@ void ToDoListWindow::quitWindowCB(Fl_Widget *w) {
     if (unsavedChanges){
         int a = fl_choice("There are unsaved changes. Do you really want to quit?", "Yes", "No",0);
         if (a == 0){
-            addNodeWindow->hide();
+            if (addNodeWindow != NULL)
+                addNodeWindow->hide();
             win->hide();
         }
     }
     else{
-        addNodeWindow->hide();
+        if (addNodeWindow != NULL)
+            addNodeWindow->hide();
         win->hide();
     }
 
